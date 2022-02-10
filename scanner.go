@@ -1,24 +1,22 @@
 package main
 
 type Scanner struct {
-	source  []rune
-	tokens  []Token
-	start   int
-	current int
-	line    int
+	source         []rune
+	tokens         []Token
+	start          int
+	current        int
+	line           int
+	inBlockComment bool
 }
 
 func NewScanner(source string) *Scanner {
-	return &Scanner{[]rune(source), make([]Token, 0), 0, 0, 1}
+	return &Scanner{[]rune(source), make([]Token, 0), 0, 0, 1, false}
 }
 
 func (s *Scanner) scanTokens() ([]Token, []Error) {
 	errors := make([]Error, 0)
 
-	for {
-		if s.isAtEnd() {
-			break
-		}
+	for !s.isAtEnd() {
 		s.start = s.current
 		err := s.scanToken()
 
@@ -59,7 +57,15 @@ func (s *Scanner) scanToken() Error {
 	case ";":
 		s.addToken(TOK_SEMICOLON)
 	case "*":
-		s.addToken(TOK_STAR)
+		if s.match("/") {
+			if s.inBlockComment {
+				s.inBlockComment = false
+			} else {
+				return ERR_UNEXPECTED_TOKEN(s.line, token)
+			}
+		} else {
+			s.addToken(TOK_STAR)
+		}
 	case "!":
 		if s.match("=") {
 			s.addToken(TOK_BANG_EQUAL)
@@ -86,12 +92,22 @@ func (s *Scanner) scanToken() Error {
 		}
 	case "/":
 		if s.match("/") {
-
+			for s.peek() != "\n" && !s.isAtEnd() {
+				s.advance()
+			}
+		} else if s.match("*") {
+			s.inBlockComment = true
 		} else {
 			s.addToken(TOK_SLASH)
 		}
+	case " ", "\r", "\t":
+		break
+	case "\n":
+		s.line += 1
 	default:
-		return ERR_UNEXPECTED_TOKEN(s.line, token)
+		if !s.inBlockComment {
+			return ERR_UNEXPECTED_TOKEN(s.line, token)
+		}
 	}
 
 	return nil
@@ -100,6 +116,13 @@ func (s *Scanner) scanToken() Error {
 func (s *Scanner) advance() string {
 	s.current += 1
 	return string(s.source[s.current-1])
+}
+
+func (s *Scanner) peek() string {
+	if s.isAtEnd() {
+		return "\000"
+	}
+	return string(s.source[s.current])
 }
 
 func (s *Scanner) match(expected string) bool {
@@ -115,6 +138,9 @@ func (s *Scanner) match(expected string) bool {
 }
 
 func (s *Scanner) addToken(tokType TokenType) {
+	if s.inBlockComment {
+		return
+	}
 	s.addTokenWithLiteral(tokType, nil)
 }
 
