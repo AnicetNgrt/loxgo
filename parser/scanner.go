@@ -1,4 +1,4 @@
-package main
+package parser
 
 import (
 	"strconv"
@@ -11,14 +11,14 @@ type Scanner struct {
 	start          int
 	current        int
 	line           int
-	inBlockComment bool
+	inBlockComment int
 }
 
 func NewScanner(source string) *Scanner {
-	return &Scanner{[]rune(source), make([]Token, 0), 0, 0, 1, false}
+	return &Scanner{[]rune(source), make([]Token, 0), 0, 0, 1, 0}
 }
 
-func (s *Scanner) scanTokens() ([]Token, []Error) {
+func (s *Scanner) ScanTokens() ([]Token, []Error) {
 	errors := make([]Error, 0)
 
 	for !s.isAtEnd() {
@@ -63,8 +63,8 @@ func (s *Scanner) scanToken() Error {
 		s.addToken(TOK_SEMICOLON)
 	case "*":
 		if s.match("/") {
-			if s.inBlockComment {
-				s.inBlockComment = false
+			if s.inBlockComment > 0 {
+				s.inBlockComment -= 1
 			} else {
 				return ERR_UNEXPECTED_TOKEN(s.line, tokenStr)
 			}
@@ -101,7 +101,7 @@ func (s *Scanner) scanToken() Error {
 				s.advance()
 			}
 		} else if s.match("*") {
-			s.inBlockComment = true
+			s.inBlockComment += 1
 		} else {
 			s.addToken(TOK_SLASH)
 		}
@@ -115,11 +115,13 @@ func (s *Scanner) scanToken() Error {
 	case "\n":
 		s.line += 1
 	default:
-		if unicode.IsDigit(tokenRune) {
+		if s.inBlockComment > 0 {
+			break
+		} else if unicode.IsDigit(tokenRune) {
 			s.number()
 		} else if isAlpha(tokenRune) {
 			s.identifier()
-		} else if !s.inBlockComment {
+		} else {
 			return ERR_UNEXPECTED_TOKEN(s.line, tokenStr)
 		}
 	}
@@ -132,7 +134,12 @@ func (s *Scanner) identifier() {
 		s.advance()
 	}
 
-	s.addToken(TOK_IDENTIFIER)
+	text := string(s.source[s.start:s.current])
+	tType, ok := KeywordToTokenType[text]
+	if !ok {
+		tType = TOK_IDENTIFIER
+	}
+	s.addToken(tType)
 }
 
 func isAlpha(token rune) bool {
@@ -214,7 +221,7 @@ func (s *Scanner) match(expected string) bool {
 }
 
 func (s *Scanner) addToken(tokType TokenType) {
-	if s.inBlockComment {
+	if s.inBlockComment > 0 {
 		return
 	}
 	s.addTokenWithLiteral(tokType, nil)

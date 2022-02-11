@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io/ioutil"
+	"loxgo/parser"
 	"os"
 )
 
@@ -56,26 +57,26 @@ func runPrompt() {
 	}
 }
 
-func run(source string) []Error {
-	scanner := NewScanner(source)
-	tokens, errs := scanner.scanTokens()
+func run(source string) []parser.Error {
+	scanner := parser.NewScanner(source)
+	tokens, errs := scanner.ScanTokens()
 	if len(errs) > 0 {
 		return errs
 	}
 
 	for idx, value := range tokens {
-		fmt.Printf("%d: %s\n", idx, value.toString())
+		fmt.Printf("%d: %s\n", idx, value.ToString())
 	}
 
 	return nil
 }
 
-func printErrors(errs ...Error) {
+func printErrors(errs ...parser.Error) {
 	report("", errs...)
 }
 
-func report(where string, errs ...Error) {
+func report(where string, errs ...parser.Error) {
 	for _, err := range errs {
-		fmt.Fprintf(os.Stderr, "[line %d] Error %s:\n	%s\n", err.line, where, err.message)
+		fmt.Fprintf(os.Stderr, "[line %d] Error %s:\n	%s\n", err.Line, where, err.Message)
 	}
 }

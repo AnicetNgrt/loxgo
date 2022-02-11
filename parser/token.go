@@ -1,4 +1,4 @@
-package main
+package parser
 
 import "fmt"
 
@@ -13,6 +13,6 @@ func NewToken(tokType TokenType, lexeme string, literal interface{}, line int) *
 	return &Token{tokType, lexeme, literal, line}
 }
 
-func (t *Token) toString() string {
+func (t *Token) ToString() string {
 	return fmt.Sprint(t.tokType, " ", t.lexeme, " ", t.literal)
 }

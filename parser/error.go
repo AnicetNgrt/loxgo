@@ -1,10 +1,10 @@
-package main
+package parser
 
 import "fmt"
 
 type ErrorStruct struct {
-	line    int
-	message string
+	Line    int
+	Message string
 }
 
 type Error *ErrorStruct
