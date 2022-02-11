@@ -1,5 +1,10 @@
 package main
 
+import (
+	"strconv"
+	"unicode"
+)
+
 type Scanner struct {
 	source         []rune
 	tokens         []Token
@@ -35,9 +40,9 @@ func (s *Scanner) isAtEnd() bool {
 }
 
 func (s *Scanner) scanToken() Error {
-	token := s.advance()
+	tokenStr, tokenRune := s.advance()
 
-	switch token {
+	switch tokenStr {
 	case "(":
 		s.addToken(TOK_LEFT_PAREN)
 	case ")":
@@ -61,7 +66,7 @@ func (s *Scanner) scanToken() Error {
 			if s.inBlockComment {
 				s.inBlockComment = false
 			} else {
-				return ERR_UNEXPECTED_TOKEN(s.line, token)
+				return ERR_UNEXPECTED_TOKEN(s.line, tokenStr)
 			}
 		} else {
 			s.addToken(TOK_STAR)
@@ -92,7 +97,7 @@ func (s *Scanner) scanToken() Error {
 		}
 	case "/":
 		if s.match("/") {
-			for s.peek() != "\n" && !s.isAtEnd() {
+			for s.peekStr() != "\n" && !s.isAtEnd() {
 				s.advance()
 			}
 		} else if s.match("*") {
@@ -100,29 +105,100 @@ func (s *Scanner) scanToken() Error {
 		} else {
 			s.addToken(TOK_SLASH)
 		}
+	case "\"":
+		err := s.string()
+		if err != nil {
+			return err
+		}
 	case " ", "\r", "\t":
 		break
 	case "\n":
 		s.line += 1
 	default:
-		if !s.inBlockComment {
-			return ERR_UNEXPECTED_TOKEN(s.line, token)
+		if unicode.IsDigit(tokenRune) {
+			s.number()
+		} else if isAlpha(tokenRune) {
+			s.identifier()
+		} else if !s.inBlockComment {
+			return ERR_UNEXPECTED_TOKEN(s.line, tokenStr)
 		}
 	}
 
 	return nil
 }
 
-func (s *Scanner) advance() string {
-	s.current += 1
-	return string(s.source[s.current-1])
+func (s *Scanner) identifier() {
+	for isAlphaNum(s.peek()) {
+		s.advance()
+	}
+
+	s.addToken(TOK_IDENTIFIER)
 }
 
-func (s *Scanner) peek() string {
-	if s.isAtEnd() {
-		return "\000"
+func isAlpha(token rune) bool {
+	return unicode.IsLetter(token) || string(token) == "_"
+}
+
+func isAlphaNum(token rune) bool {
+	return isAlpha(token) || unicode.IsDigit(token)
+}
+
+func (s *Scanner) number() {
+	for unicode.IsDigit(s.peek()) {
+		s.advance()
 	}
-	return string(s.source[s.current])
+
+	if s.peekStr() == "." && unicode.IsDigit(s.peekNext()) {
+		s.advance()
+		for unicode.IsDigit(s.peek()) {
+			s.advance()
+		}
+	}
+
+	number, _ := strconv.ParseFloat(string(s.source[s.start:s.current]), 64)
+	s.addTokenWithLiteral(TOK_NUMBER, number)
+}
+
+func (s *Scanner) string() Error {
+	for s.peekStr() != "\"" && !s.isAtEnd() {
+		if s.peekStr() == "\n" {
+			s.line += 1
+		}
+		s.advance()
+	}
+
+	if s.isAtEnd() {
+		return ERR_UNTERMINATED_STRING(s.line)
+	}
+
+	s.advance()
+
+	s.addTokenWithLiteral(TOK_STRING, string(s.source[s.start+1:s.current-1]))
+	return nil
+}
+
+func (s *Scanner) advance() (string, rune) {
+	s.current += 1
+	r := s.source[s.current-1]
+	return string(r), r
+}
+
+func (s *Scanner) peekNext() rune {
+	if s.current+1 >= len(s.source) {
+		return 0
+	}
+	return s.source[s.current+1]
+}
+
+func (s *Scanner) peekStr() string {
+	return string(s.peek())
+}
+
+func (s *Scanner) peek() rune {
+	if s.isAtEnd() {
+		return 0
+	}
+	return s.source[s.current]
 }
 
 func (s *Scanner) match(expected string) bool {
@@ -144,7 +220,7 @@ func (s *Scanner) addToken(tokType TokenType) {
 	s.addTokenWithLiteral(tokType, nil)
 }
 
-func (s *Scanner) addTokenWithLiteral(tokType TokenType, literal *Object) {
+func (s *Scanner) addTokenWithLiteral(tokType TokenType, literal interface{}) {
 	text := s.source[s.start:s.current]
 	s.tokens = append(s.tokens, *NewToken(tokType, string(text), literal, s.line))
 }
