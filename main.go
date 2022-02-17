@@ -9,6 +9,8 @@ import (
 )
 
 func main() {
+	parser.Test()
+
 	if len(os.Args) > 2 {
 		fmt.Println("Usage: jlox [script]")
 		os.Exit(64)
