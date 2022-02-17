@@ -1,4 +1,4 @@
-package parser
+package interpreter
 
 var KeywordToTokenType = map[string]TokenType{
 	"and":    TOK_AND,

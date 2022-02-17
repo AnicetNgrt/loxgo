@@ -4,12 +4,12 @@ import (
 	"bufio"
 	"fmt"
 	"io/ioutil"
-	"loxgo/parser"
+	"loxgo/interpreter"
 	"os"
 )
 
 func main() {
-	parser.Test()
+	interpreter.Test()
 
 	if len(os.Args) > 2 {
 		fmt.Println("Usage: jlox [script]")
@@ -59,8 +59,8 @@ func runPrompt() {
 	}
 }
 
-func run(source string) []parser.Error {
-	scanner := parser.NewScanner(source)
+func run(source string) []interpreter.Error {
+	scanner := interpreter.NewScanner(source)
 	tokens, errs := scanner.ScanTokens()
 	if len(errs) > 0 {
 		return errs
@@ -73,11 +73,11 @@ func run(source string) []parser.Error {
 	return nil
 }
 
-func printErrors(errs ...parser.Error) {
+func printErrors(errs ...interpreter.Error) {
 	report("", errs...)
 }
 
-func report(where string, errs ...parser.Error) {
+func report(where string, errs ...interpreter.Error) {
 	for _, err := range errs {
 		fmt.Fprintf(os.Stderr, "[line %d] Error %s:\n	%s\n", err.Line, where, err.Message)
 	}

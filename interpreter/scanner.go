@@ -1,4 +1,4 @@
-package parser
+package interpreter
 
 import (
 	"strconv"
@@ -220,14 +220,14 @@ func (s *Scanner) match(expected string) bool {
 	return true
 }
 
-func (s *Scanner) addToken(tokType TokenType) {
+func (s *Scanner) addToken(tType TokenType) {
 	if s.inBlockComment > 0 {
 		return
 	}
-	s.addTokenWithLiteral(tokType, nil)
+	s.addTokenWithLiteral(tType, nil)
 }
 
-func (s *Scanner) addTokenWithLiteral(tokType TokenType, literal interface{}) {
+func (s *Scanner) addTokenWithLiteral(tType TokenType, literal interface{}) {
 	text := s.source[s.start:s.current]
-	s.tokens = append(s.tokens, *NewToken(tokType, string(text), literal, s.line))
+	s.tokens = append(s.tokens, *NewToken(tType, string(text), literal, s.line))
 }

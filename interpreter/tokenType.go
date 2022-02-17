@@ -1,4 +1,4 @@
-package parser
+package interpreter
 
 type TokenType int
 
