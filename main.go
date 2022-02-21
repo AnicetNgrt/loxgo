@@ -9,8 +9,6 @@ import (
 )
 
 func main() {
-	interpreter.Test()
-
 	if len(os.Args) > 2 {
 		fmt.Println("Usage: jlox [script]")
 		os.Exit(64)
@@ -65,10 +63,17 @@ func run(source string) []interpreter.Error {
 	if len(errs) > 0 {
 		return errs
 	}
+	parser := interpreter.NewParser(tokens)
+	expr, errs := parser.Parse()
+	if len(errs) > 0 {
+		return errs
+	}
 
 	for idx, value := range tokens {
 		fmt.Printf("%d: %s\n", idx, value.ToString())
 	}
+
+	fmt.Printf("%s\n", expr.PrettyPrint())
 
 	return nil
 }

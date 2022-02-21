@@ -9,6 +9,10 @@ type ErrorStruct struct {
 
 type Error *ErrorStruct
 
+func ERR(line int, msg string) Error {
+	return &ErrorStruct{line, msg}
+}
+
 func ERR_UNEXPECTED_TOKEN(line int, token string) Error {
 	return &ErrorStruct{line, fmt.Sprintf("Unexpected token: %s", token)}
 }
