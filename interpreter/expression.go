@@ -1,9 +1,12 @@
 package interpreter
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type Expr interface {
 	PrettyPrint() string
+	Interpret() (Val, Error)
 }
 
 type Binary struct {

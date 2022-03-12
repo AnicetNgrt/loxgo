@@ -10,7 +10,7 @@ func NewParser(tokens []Token) *Parser {
 	return &Parser{
 		tokens:  tokens,
 		current: 0,
-		errors:  make([]Error, 0),
+		errors:  make([]Error, 0), // Errors are acumulated via side-effects for simplicity sake
 	}
 }
 
