@@ -14,6 +14,20 @@ func NewParser(tokens []Token) *Parser {
 	}
 }
 
+// Lower priority operations parsed at the upper levels
+// Higher priority operations parsed at the deeper levels
+// Therefore builds a tree that matches the established order
+// --------------------------------------------------------------
+// expression     → equality ;
+// equality       → comparison ( ( "!=" | "==" ) comparison )* ;
+// comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
+// term           → factor ( ( "-" | "+" ) factor )* ;
+// factor         → unary ( ( "/" | "*" ) unary )* ;
+// unary          → ( "!" | "-" ) unary
+//                | primary ;
+// primary        → NUMBER | STRING | "true" | "false" | "nil"
+//                | "(" expression ")" ;
+
 func (p *Parser) Parse() (Expr, []Error) {
 	expr, _ := p.expression()
 	return expr, p.errors
