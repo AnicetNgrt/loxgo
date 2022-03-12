@@ -47,7 +47,7 @@ func (p *Parser) comparison() (Expr, bool) {
 		return nil, false
 	}
 
-	for p.match(TOK_GREATER, TOK_GREATER, TOK_LESS, TOK_LESS_EQUAL) {
+	for p.match(TOK_GREATER, TOK_GREATER, TOK_LESS, TOK_LESS_EQUAL, TOK_GREATER_EQUAL) {
 		operator := p.previous()
 		right, ok := p.term()
 		if !ok {
